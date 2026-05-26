@@ -1,42 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="description" content="Application page for the G05 e-commerce and digital retail recruitment website.">
-    <meta name="keywords" content="apply, careers, application form, e-commerce, digital retail">
-    <meta name="author" content="G05 Team">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apply | ShopSphere</title>
-    <link rel="stylesheet" href="styles.css">
+<?php
+$page_title = "Apply | ShopSphere";
+$page_heading = "Apply for a role at ShopSphere";
+$page_description = "Submit your application for customer-facing website, product listing, and digital workflow roles at ShopSphere.";
 
-    <style>
-        .button-row {
-            align-items: center;
-        }
-    </style>
-</head>
-<body>
-
-<header class="site-header">
-    <div class="container">
-        <div class="hero-text">
-            <p class="eyebrow">G05 - E-Commerce &amp; Digital Retail Platform</p>
-                <h1>Apply for a role at ShopSphere</h1>
-            <p class="hero-summary" style="max-width: 52rem;">
-                Submit your application for customer-facing website, product listing, and digital workflow roles at ShopSphere.
-            </p>
-        </div>
-
-        <nav class="site-nav" aria-label="Main navigation">
-            <ul>
-                <li><a href="index.html">Home</a></li>
-                <li><a href="jobs.html">Jobs</a></li>
-                <li><a href="apply.html" class="current-page" aria-current="page">Apply</a></li>
-                <li><a href="about.html">About</a></li>
-            </ul>
-        </nav>
-    </div>
-</header>
+include 'header.inc';
+include 'nav.inc';
+?>
 
 <main id="main-content" class="container page-main">
     <section class="page-intro">
@@ -59,64 +28,27 @@
                 </div>
             </header>
 
-            <form class="apply-form" action="https://mercury.swin.edu.au/it000000/formtest.php" method="post">
+            <form class="apply-form" action="process_eoi.php" method="post" novalidate>
                 <div class="form-grid">
                     <div class="field-group">
                         <label for="job-reference">Job Reference Number</label>
-                        <input
-                            type="text"
-                            id="job-reference"
-                            name="job-reference"
-                            pattern="[A-Za-z0-9]{5}"
-                            maxlength="5"
-                            required
-                            placeholder="Example: ECF25"
-                            title="Enter exactly five letters or numbers."
-                            aria-describedby="job-reference-note"
-                        >
+                        <input type="text" id="job-reference" name="job-reference" maxlength="5" required placeholder="Example: FWD25" aria-describedby="job-reference-note">
                         <p id="job-reference-note" class="field-note">Exactly five alphanumeric characters.</p>
                     </div>
 
                     <div class="field-group">
                         <label for="first-name">First Name</label>
-                        <input
-                            type="text"
-                            id="first-name"
-                            name="first-name"
-                            pattern="[A-Za-z\s'-]{1,20}"
-                            maxlength="20"
-                            required
-                            autocomplete="given-name"
-                            title="Use letters only, up to 20 characters."
-                        >
+                        <input type="text" id="first-name" name="first-name" maxlength="50" required autocomplete="given-name">
                     </div>
 
                     <div class="field-group">
                         <label for="last-name">Last Name</label>
-                        <input
-                            type="text"
-                            id="last-name"
-                            name="last-name"
-                            pattern="[A-Za-z\s'-git]{1,20}"
-                            maxlength="20"
-                            required
-                            autocomplete="family-name"
-                            title="Use letters only, up to 20 characters."
-                        >
+                        <input type="text" id="last-name" name="last-name" maxlength="50" required autocomplete="family-name">
                     </div>
 
                     <div class="field-group">
                         <label for="date-of-birth">Date of Birth</label>
-                        <input
-                            type="text"
-                            id="date-of-birth"
-                            name="date-of-birth"
-                            pattern="(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/(19|20)[0-9]{2}"
-                            placeholder="dd/mm/yyyy"
-                            required
-                            inputmode="numeric"
-                            title="Use the format dd/mm/yyyy."
-                        >
+                        <input type="text" id="date-of-birth" name="date-of-birth" placeholder="dd/mm/yyyy" required inputmode="numeric">
                     </div>
 
                     <fieldset class="choice-group full-width">
@@ -126,33 +58,18 @@
                             <label><input type="radio" name="gender" value="male"> Male</label>
                             <label><input type="radio" name="gender" value="other"> Other</label>
                             <label><input type="radio" name="gender" value="prefer-not-to-say"> Prefer not to say</label>
-                            
                         </div>
                         <p id="gender-note" class="field-note">Select the option that best reflects how you would like to identify for this application.</p>
                     </fieldset>
 
                     <div class="field-group full-width">
                         <label for="street-address">Street Address</label>
-                        <input
-                            type="text"
-                            id="street-address"
-                            name="street-address"
-                            maxlength="40"
-                            required
-                            autocomplete="address-line1"
-                        >
+                        <input type="text" id="street-address" name="street-address" maxlength="100" required autocomplete="address-line1">
                     </div>
 
                     <div class="field-group">
                         <label for="suburb-town">Suburb / Town</label>
-                        <input
-                            type="text"
-                            id="suburb-town"
-                            name="suburb-town"
-                            maxlength="40"
-                            required
-                            autocomplete="address-level2"
-                        >
+                        <input type="text" id="suburb-town" name="suburb-town" maxlength="50" required autocomplete="address-level2">
                     </div>
 
                     <div class="field-group">
@@ -172,44 +89,17 @@
 
                     <div class="field-group">
                         <label for="postcode">Postcode</label>
-                        <input
-                            type="text"
-                            id="postcode"
-                            name="postcode"
-                            pattern="[0-9]{4}"
-                            maxlength="4"
-                            required
-                            inputmode="numeric"
-                            autocomplete="postal-code"
-                            title="Enter exactly four digits."
-                        >
+                        <input type="text" id="postcode" name="postcode" maxlength="4" required inputmode="numeric" autocomplete="postal-code">
                     </div>
 
                     <div class="field-group">
                         <label for="email">Email</label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            required
-                            autocomplete="email"
-                            placeholder="name@example.com"
-                        >
+                        <input type="email" id="email" name="email" required autocomplete="email" placeholder="name@example.com">
                     </div>
 
                     <div class="field-group">
                         <label for="phone-number">Phone Number</label>
-                        <input
-                            type="tel"
-                            id="phone-number"
-                            name="phone-number"
-                            pattern="[0-9]{8,12}"
-                            required
-                            inputmode="numeric"
-                            autocomplete="tel"
-                            placeholder="8 to 12 digits"
-                            title="Enter between 8 and 12 digits with no spaces."
-                        >
+                        <input type="tel" id="phone-number" name="phone-number" required inputmode="numeric" autocomplete="tel" placeholder="8 to 12 digits">
                     </div>
 
                     <fieldset class="choice-group full-width">
@@ -225,12 +115,7 @@
 
                     <div class="field-group full-width">
                         <label for="other-skills">Other Skills</label>
-                        <textarea
-                            id="other-skills"
-                            name="other-skills"
-                            rows="6"
-                            placeholder="Add any other relevant platforms, retail tools, or customer experience skills here."
-                        ></textarea>
+                        <textarea id="other-skills" name="other-skills" rows="6" placeholder="Add any other relevant platforms, retail tools, or customer experience skills here."></textarea>
                     </div>
 
                     <div class="full-width button-row">
@@ -247,7 +132,7 @@
                 <h2>Application checklist</h2>
                 <ol class="application-steps">
                     <li>Match the job reference number to the role listed on the Jobs page.</li>
-                    <li>Check that your date of birth uses the <span lang="en">dd/mm/yyyy</span> format.</li>
+                    <li>Check that your date of birth uses the dd/mm/yyyy format.</li>
                     <li>Use a current email address and a phone number with 8 to 12 digits.</li>
                     <li>Select the skills that best represent your web and digital retail experience.</li>
                 </ol>
@@ -269,18 +154,4 @@
     </div>
 </main>
 
-<footer class="site-footer">
-    <div class="container footer-layout">
-        <div>
-            <p>&copy; 2026 ShopSphere</p>
-            <p><a href="mailto:info@shopsphere.com">info@shopsphere.com</a></p>
-        </div>
-        <div class="footer-links">
-            <p><a href="https://2568879251l.atlassian.net/jira/software/projects/SCRUM/boards/1?atlOrigin=eyJpIjoiOWZjY2I1NWI1YzJlNGUzNWI2YWQ5MjZhNTBlOTJiNDIiLCJwIjoiaiJ9">Jira Project Link</a></p>
-            <p><a href="https://github.com/105965256/COS10026-Group-Work">GitHub Repository Link</a></p>
-            <p><a href="https://105965256.github.io/COS10026-Group-Work/">GitHub Pages</a></p>
-        </div>
-    </div>
-</footer>
-</body>
-</html>
+<?php include 'footer.inc'; ?>
