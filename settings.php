@@ -17,7 +17,7 @@ function clean_input($value) {
 function db_fail($message) {
     http_response_code(500);
     echo "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Database Error</title>";
-    echo "<link rel=\"stylesheet\" href=\"styles/style.css\"></head><body><main class=\"container page-main\">";
+    echo "<link rel=\"stylesheet\" href=\"styles.css\"></head><body><main class=\"container page-main\">";
     echo "<section class=\"content-card message-box error-box\"><h1>Database error</h1><p>" . h($message) . "</p></section>";
     echo "</main></body></html>";
     exit;

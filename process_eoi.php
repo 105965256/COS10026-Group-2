@@ -124,13 +124,11 @@ if (strlen($data["other_skills"]) > 500) {
     $errors[] = "Other skills must be 500 characters or fewer.";
 }
 
-$pageTitle = count($errors) > 0 ? "Application Errors | ShopSphere" : "Application Confirmation | ShopSphere";
-$pageDescription = "Server-side application processing for ShopSphere.";
-$pageKeywords = "application, EOI, server-side validation";
-$activePage = "apply";
-$heroTitle = count($errors) > 0 ? "Application needs attention" : "Application received";
-$heroSummary = count($errors) > 0 ? "Please review the server-side validation messages below." : "Your Expression of Interest has been saved securely in the database.";
+$page_title = count($errors) > 0 ? "Application Errors | ShopSphere" : "Application Confirmation | ShopSphere";
+$page_heading = count($errors) > 0 ? "Application needs attention" : "Application received";
+$page_description = count($errors) > 0 ? "Please review the server-side validation messages below." : "Your Expression of Interest has been saved securely in the database.";
 include __DIR__ . "/header.inc";
+include __DIR__ . "/nav.inc";
 ?>
 
 <main id="main-content" class="container page-main">

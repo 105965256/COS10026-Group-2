@@ -1,7 +1,10 @@
 <?php
+require_once __DIR__ . "/settings.php";
+
 $page_title = "Apply | ShopSphere";
 $page_heading = "Apply for a role at ShopSphere";
 $page_description = "Submit your application for customer-facing website, product listing, and digital workflow roles at ShopSphere.";
+$prefill_job = strtoupper(clean_input($_GET["job"] ?? $_GET["job-reference"] ?? ""));
 
 include 'header.inc';
 include 'nav.inc';
@@ -32,29 +35,29 @@ include 'nav.inc';
                 <div class="form-grid">
                     <div class="field-group">
                         <label for="job-reference">Job Reference Number</label>
-                        <input type="text" id="job-reference" name="job-reference" maxlength="5" required placeholder="Example: FWD25" aria-describedby="job-reference-note">
+                        <input type="text" id="job-reference" name="job-reference" value="<?php echo h($prefill_job); ?>" placeholder="Example: FWD25" aria-describedby="job-reference-note">
                         <p id="job-reference-note" class="field-note">Exactly five alphanumeric characters.</p>
                     </div>
 
                     <div class="field-group">
                         <label for="first-name">First Name</label>
-                        <input type="text" id="first-name" name="first-name" maxlength="50" required autocomplete="given-name">
+                        <input type="text" id="first-name" name="first-name" autocomplete="given-name">
                     </div>
 
                     <div class="field-group">
                         <label for="last-name">Last Name</label>
-                        <input type="text" id="last-name" name="last-name" maxlength="50" required autocomplete="family-name">
+                        <input type="text" id="last-name" name="last-name" autocomplete="family-name">
                     </div>
 
                     <div class="field-group">
                         <label for="date-of-birth">Date of Birth</label>
-                        <input type="text" id="date-of-birth" name="date-of-birth" placeholder="dd/mm/yyyy" required inputmode="numeric">
+                        <input type="text" id="date-of-birth" name="date-of-birth" placeholder="dd/mm/yyyy" inputmode="numeric">
                     </div>
 
                     <fieldset class="choice-group full-width">
                         <legend>Gender</legend>
                         <div class="inline-options" aria-describedby="gender-note">
-                            <label><input type="radio" name="gender" value="female" required> Female</label>
+                            <label><input type="radio" name="gender" value="female"> Female</label>
                             <label><input type="radio" name="gender" value="male"> Male</label>
                             <label><input type="radio" name="gender" value="other"> Other</label>
                             <label><input type="radio" name="gender" value="prefer-not-to-say"> Prefer not to say</label>
@@ -64,17 +67,17 @@ include 'nav.inc';
 
                     <div class="field-group full-width">
                         <label for="street-address">Street Address</label>
-                        <input type="text" id="street-address" name="street-address" maxlength="100" required autocomplete="address-line1">
+                        <input type="text" id="street-address" name="street-address" autocomplete="address-line1">
                     </div>
 
                     <div class="field-group">
                         <label for="suburb-town">Suburb / Town</label>
-                        <input type="text" id="suburb-town" name="suburb-town" maxlength="50" required autocomplete="address-level2">
+                        <input type="text" id="suburb-town" name="suburb-town" autocomplete="address-level2">
                     </div>
 
                     <div class="field-group">
                         <label for="state">State</label>
-                        <select id="state" name="state" required autocomplete="address-level1">
+                        <select id="state" name="state" autocomplete="address-level1">
                             <option value="">Please select</option>
                             <option value="VIC">VIC</option>
                             <option value="NSW">NSW</option>
@@ -89,17 +92,17 @@ include 'nav.inc';
 
                     <div class="field-group">
                         <label for="postcode">Postcode</label>
-                        <input type="text" id="postcode" name="postcode" maxlength="4" required inputmode="numeric" autocomplete="postal-code">
+                        <input type="text" id="postcode" name="postcode" inputmode="numeric" autocomplete="postal-code">
                     </div>
 
                     <div class="field-group">
                         <label for="email">Email</label>
-                        <input type="email" id="email" name="email" required autocomplete="email" placeholder="name@example.com">
+                        <input type="text" id="email" name="email" autocomplete="email" placeholder="name@example.com">
                     </div>
 
                     <div class="field-group">
                         <label for="phone-number">Phone Number</label>
-                        <input type="tel" id="phone-number" name="phone-number" required inputmode="numeric" autocomplete="tel" placeholder="8 to 12 digits">
+                        <input type="text" id="phone-number" name="phone-number" inputmode="numeric" autocomplete="tel" placeholder="8 to 12 digits">
                     </div>
 
                     <fieldset class="choice-group full-width">
