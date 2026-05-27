@@ -1,119 +1,158 @@
 <?php
+require_once __DIR__ . "/settings.php";
+start_project_session();
 
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit();
+if (empty($_SESSION["manager_logged_in"])) {
+    header("Location: login.php");
+    exit;
 }
 
-include 'settings.php';
+$conn = db_connect();
+ensure_all_tables($conn);
+
+$notice = $_SESSION["manage_notice"] ?? "";
+$error = $_SESSION["manage_error"] ?? "";
+unset($_SESSION["manage_notice"], $_SESSION["manage_error"]);
+
+$allowed_sort = array(
+    "created_at" => "Date Applied",
+    "job_reference" => "Job Reference",
+    "first_name" => "First Name",
+    "last_name" => "Last Name",
+    "status" => "Status",
+    "EOInumber" => "EOI Number"
+);
+$allowed_order = array(
+    "DESC" => "Descending",
+    "ASC" => "Ascending"
+);
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!csrf_valid($_POST["csrf_token"] ?? "")) {
+        $_SESSION["manage_error"] = "Session token expired. Please try again.";
+        header("Location: manage.php");
+        exit;
+    }
+
+    $action = $_POST["manager_action"] ?? "";
+
+    if ($action === "delete_by_job") {
+        $job_ref = strtoupper(clean_input($_POST["delete_job_reference"] ?? ""));
+        if (!preg_match("/^[A-Za-z0-9]{5}$/", $job_ref)) {
+            $_SESSION["manage_error"] = "Enter a valid five-character job reference before deleting EOIs.";
+        } else {
+            $stmt = mysqli_prepare($conn, "DELETE FROM eoi WHERE job_reference = ?");
+            if (!$stmt) {
+                db_fail(mysqli_error($conn));
+            }
+            bind_params($stmt, "s", array($job_ref));
+            if (!mysqli_stmt_execute($stmt)) {
+                db_fail(mysqli_stmt_error($stmt));
+            }
+            $_SESSION["manage_notice"] = mysqli_stmt_affected_rows($stmt) . " EOI record(s) deleted for job reference " . $job_ref . ".";
+        }
+    } elseif ($action === "update_status") {
+        $eoi_number = (int)($_POST["EOInumber"] ?? 0);
+        $status = clean_input($_POST["status"] ?? "");
+        if ($eoi_number <= 0 || !in_array($status, status_options(), true)) {
+            $_SESSION["manage_error"] = "Select a valid EOI number and status.";
+        } else {
+            $stmt = mysqli_prepare($conn, "UPDATE eoi SET status = ? WHERE EOInumber = ?");
+            if (!$stmt) {
+                db_fail(mysqli_error($conn));
+            }
+            bind_params($stmt, "si", array($status, $eoi_number));
+            if (!mysqli_stmt_execute($stmt)) {
+                db_fail(mysqli_stmt_error($stmt));
+            }
+            $_SESSION["manage_notice"] = "EOI #" . $eoi_number . " status updated to " . $status . ".";
+        }
+    }
+
+    header("Location: manage.php?view=all");
+    exit;
+}
+
+$view = clean_input($_GET["view"] ?? "all");
+$sort = clean_input($_GET["sort"] ?? "created_at");
+$order = strtoupper(clean_input($_GET["order"] ?? "DESC"));
+$job_ref = strtoupper(clean_input($_GET["job_reference"] ?? ""));
+$first_name = clean_input($_GET["first_name"] ?? "");
+$last_name = clean_input($_GET["last_name"] ?? "");
+
+if (!array_key_exists($sort, $allowed_sort)) {
+    $sort = "created_at";
+}
+if (!array_key_exists($order, $allowed_order)) {
+    $order = "DESC";
+}
+if (!in_array($view, array("all", "job", "name"), true)) {
+    $view = "all";
+}
+
+$conditions = array();
+$params = array();
+$types = "";
+$result_title = "All EOIs";
+$result_summary = "Showing all submitted Expressions of Interest.";
+
+if ($view === "job") {
+    if ($job_ref !== "" && preg_match("/^[A-Za-z0-9]{5}$/", $job_ref)) {
+        $conditions[] = "job_reference = ?";
+        $params[] = $job_ref;
+        $types .= "s";
+        $result_title = "EOIs for " . $job_ref;
+        $result_summary = "Showing applications for job reference " . $job_ref . ".";
+    } else {
+        $error = $error !== "" ? $error : "Enter a valid five-character job reference.";
+        $conditions[] = "1 = 0";
+        $result_title = "Job Reference Search";
+        $result_summary = "No valid job reference was supplied.";
+    }
+} elseif ($view === "name") {
+    if ($first_name !== "") {
+        $conditions[] = "first_name LIKE ?";
+        $params[] = "%" . $first_name . "%";
+        $types .= "s";
+    }
+    if ($last_name !== "") {
+        $conditions[] = "last_name LIKE ?";
+        $params[] = "%" . $last_name . "%";
+        $types .= "s";
+    }
+
+    if (count($conditions) === 0) {
+        $error = $error !== "" ? $error : "Enter a first name, last name, or both.";
+        $conditions[] = "1 = 0";
+    }
+
+    $result_title = "Applicant Name Search";
+    $result_summary = "Showing EOIs that match the supplied applicant name details.";
+}
+
+$sql = "SELECT * FROM eoi";
+if (count($conditions) > 0) {
+    $sql .= " WHERE " . implode(" AND ", $conditions);
+}
+$sql .= " ORDER BY `" . $sort . "` " . $order;
+
+if ($types !== "") {
+    $result = prepared_result($conn, $sql, $types, $params);
+} else {
+    $result = mysqli_query($conn, $sql);
+    if (!$result) {
+        db_fail(mysqli_error($conn));
+    }
+}
+
+$records = array();
+while ($row = mysqli_fetch_assoc($result)) {
+    $records[] = $row;
+}
 
 $page_title = "Manager Dashboard | ShopSphere";
 $page_heading = "HR Manager Dashboard";
-$page_description = "Manage applications and applicant information.";
-
-$filter_type = '';
-$filter_value = '';
-$sort_field = 'created_at';
-$sort_order = 'DESC';
-$results = array();
-$query_executed = false;
-
-// Handle form submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $query_executed = true;
-
-    if (isset($_POST['action'])) {
-        $action = $_POST['action'];
-
-        // Get sort preferences
-        if (isset($_POST['sort_field'])) {
-            $sort_field = $_POST['sort_field'];
-        }
-        if (isset($_POST['sort_order'])) {
-            $sort_order = $_POST['sort_order'];
-        }
-
-        if ($action === 'list_all') {
-            // List all EOIs
-            $sql = "SELECT * FROM eoi ORDER BY $sort_field $sort_order";
-            $result = $conn->query($sql);
-            if ($result) {
-                while ($row = $result->fetch_assoc()) {
-                    $results[] = $row;
-                }
-            }
-            $filter_type = 'All EOIs';
-        }
-
-        elseif ($action === 'list_by_job') {
-            // List by job reference
-            if (isset($_POST['job_reference']) && !empty($_POST['job_reference'])) {
-                $job_ref = $conn->real_escape_string($_POST['job_reference']);
-                $sql = "SELECT * FROM eoi WHERE job_reference = '$job_ref' ORDER BY $sort_field $sort_order";
-                $result = $conn->query($sql);
-                if ($result) {
-                    while ($row = $result->fetch_assoc()) {
-                        $results[] = $row;
-                    }
-                }
-                $filter_type = 'Job Reference';
-                $filter_value = $job_ref;
-            }
-        }
-
-        elseif ($action === 'list_by_name') {
-            // List by applicant name
-            if (isset($_POST['search_name']) && !empty($_POST['search_name'])) {
-                $search_name = '%' . $conn->real_escape_string($_POST['search_name']) . '%';
-                $sql = "SELECT * FROM eoi WHERE first_name LIKE '$search_name' OR last_name LIKE '$search_name' ORDER BY $sort_field $sort_order";
-                $result = $conn->query($sql);
-                if ($result) {
-                    while ($row = $result->fetch_assoc()) {
-                        $results[] = $row;
-                    }
-                }
-                $filter_type = 'Applicant Name';
-                $filter_value = $_POST['search_name'];
-            }
-        }
-
-        elseif ($action === 'delete_by_job') {
-            // Delete all EOIs by job reference
-            if (isset($_POST['job_reference_delete']) && !empty($_POST['job_reference_delete'])) {
-                $job_ref = $conn->real_escape_string($_POST['job_reference_delete']);
-                $sql = "DELETE FROM eoi WHERE job_reference = '$job_ref'";
-                if ($conn->query($sql)) {
-                    $filter_type = "Deleted EOIs for job reference: $job_ref";
-                    $filter_value = $conn->affected_rows . " records deleted";
-                }
-            }
-        }
-
-        elseif ($action === 'change_status') {
-            // Change EOI status
-            if (isset($_POST['eoi_id']) && isset($_POST['new_status'])) {
-                $eoi_id = (int)$_POST['eoi_id'];
-                $new_status = $conn->real_escape_string($_POST['new_status']);
-                $sql = "UPDATE eoi SET status = '$new_status' WHERE eoi_id = $eoi_id";
-                if ($conn->query($sql)) {
-                    $filter_type = "Status Updated";
-                    $filter_value = "EOI #$eoi_id updated to: $new_status";
-                    // Re-fetch all data
-                    $sql = "SELECT * FROM eoi ORDER BY $sort_field $sort_order";
-                    $result = $conn->query($sql);
-                    if ($result) {
-                        while ($row = $result->fetch_assoc()) {
-                            $results[] = $row;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+$page_description = "Manage Expressions of Interest submitted by applicants.";
 
 include 'header.inc';
 include 'nav.inc';
@@ -124,11 +163,19 @@ include 'nav.inc';
         <p class="section-tag">Dashboard</p>
         <h2>HR Management Dashboard</h2>
         <p>
-            Welcome, <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong>. 
+            Welcome, <strong><?php echo h($_SESSION["manager_username"] ?? "manager"); ?></strong>.
             Use the options below to manage EOI applications.
-            <a href="logout.php" style="float: right;">Log Out</a>
+            <a class="logout-link" href="logout.php">Log Out</a>
         </p>
     </section>
+
+    <?php if ($notice !== ""): ?>
+        <section class="message-box success-box"><?php echo h($notice); ?></section>
+    <?php endif; ?>
+
+    <?php if ($error !== ""): ?>
+        <section class="message-box error-box"><?php echo h($error); ?></section>
+    <?php endif; ?>
 
     <section class="content-card">
         <header class="card-header">
@@ -138,134 +185,149 @@ include 'nav.inc';
             </div>
         </header>
 
-        <form method="post" action="manage.php">
-            <div style="display: grid; gap: 1.5rem;">
-                
-                <!-- Sort Options -->
-                <div style="padding: 1rem; background: #f8fbff; border: 1px solid #d9e4ef; border-radius: 0.8rem;">
-                    <h3 style="margin-top: 0;">Sort Results By</h3>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <div class="field-group" style="flex: 1; min-width: 200px;">
-                            <label for="sort_field">Sort Field</label>
-                            <select id="sort_field" name="sort_field">
-                                <option value="created_at">Date Applied</option>
-                                <option value="job_reference">Job Reference</option>
-                                <option value="first_name">First Name</option>
-                                <option value="last_name">Last Name</option>
-                                <option value="status">Status</option>
-                            </select>
-                        </div>
-                        <div class="field-group" style="flex: 1; min-width: 200px;">
-                            <label for="sort_order">Sort Order</label>
-                            <select id="sort_order" name="sort_order">
-                                <option value="DESC">Newest First</option>
-                                <option value="ASC">Oldest First</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action 1: List All -->
-                <div style="padding: 1rem; background: #f8fbff; border: 1px solid #d9e4ef; border-radius: 0.8rem;">
-                    <h3 style="margin-top: 0;">1. List All EOIs</h3>
-                    <button type="submit" name="action" value="list_all" style="padding: 0.7rem 1rem; background: #0f4c97; color: white; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: bold;">View All Applications</button>
-                </div>
-
-                <!-- Action 2: Filter by Job Reference -->
-                <div style="padding: 1rem; background: #f8fbff; border: 1px solid #d9e4ef; border-radius: 0.8rem;">
-                    <h3 style="margin-top: 0;">2. Filter by Job Reference</h3>
+        <div class="manager-actions">
+            <form class="apply-form action-panel" action="manage.php" method="get" novalidate>
+                <input type="hidden" name="view" value="all">
+                <h3>1. List All EOIs</h3>
+                <div class="form-grid">
                     <div class="field-group">
-                        <input type="text" name="job_reference" placeholder="Enter job reference (e.g., FWD25)" maxlength="5">
+                        <label for="sort-all">Sort Field</label>
+                        <select id="sort-all" name="sort">
+                            <?php foreach ($allowed_sort as $value => $label): ?>
+                                <option value="<?php echo h($value); ?>"<?php echo $sort === $value ? " selected" : ""; ?>><?php echo h($label); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
-                    <button type="submit" name="action" value="list_by_job" style="padding: 0.7rem 1rem; background: #0f4c97; color: white; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: bold;">Search by Job</button>
-                </div>
-
-                <!-- Action 3: Filter by Name -->
-                <div style="padding: 1rem; background: #f8fbff; border: 1px solid #d9e4ef; border-radius: 0.8rem;">
-                    <h3 style="margin-top: 0;">3. Filter by Applicant Name</h3>
                     <div class="field-group">
-                        <input type="text" name="search_name" placeholder="Enter first or last name">
+                        <label for="order-all">Sort Order</label>
+                        <select id="order-all" name="order">
+                            <?php foreach ($allowed_order as $value => $label): ?>
+                                <option value="<?php echo h($value); ?>"<?php echo $order === $value ? " selected" : ""; ?>><?php echo h($label); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
-                    <button type="submit" name="action" value="list_by_name" style="padding: 0.7rem 1rem; background: #0f4c97; color: white; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: bold;">Search by Name</button>
                 </div>
+                <div class="button-row">
+                    <input type="submit" value="View All Applications">
+                </div>
+            </form>
 
-                <!-- Action 4: Delete by Job Reference -->
-                <div style="padding: 1rem; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 0.8rem;">
-                    <h3 style="margin-top: 0; color: #7f1d1d;">4. Delete All EOIs by Job Reference</h3>
-                    <p style="color: #7f1d1d; font-size: 0.9rem;">⚠️ Warning: This action cannot be undone.</p>
+            <form class="apply-form action-panel" action="manage.php" method="get" novalidate>
+                <input type="hidden" name="view" value="job">
+                <input type="hidden" name="sort" value="<?php echo h($sort); ?>">
+                <input type="hidden" name="order" value="<?php echo h($order); ?>">
+                <h3>2. List by Job Reference</h3>
+                <div class="field-group">
+                    <label for="job-reference-filter">Job Reference</label>
+                    <input type="text" id="job-reference-filter" name="job_reference" value="<?php echo h($job_ref); ?>" placeholder="Example: FWD25">
+                </div>
+                <div class="button-row">
+                    <input type="submit" value="Search by Job">
+                </div>
+            </form>
+
+            <form class="apply-form action-panel" action="manage.php" method="get" novalidate>
+                <input type="hidden" name="view" value="name">
+                <input type="hidden" name="sort" value="<?php echo h($sort); ?>">
+                <input type="hidden" name="order" value="<?php echo h($order); ?>">
+                <h3>3. List by Applicant Name</h3>
+                <div class="form-grid">
                     <div class="field-group">
-                        <input type="text" name="job_reference_delete" placeholder="Enter job reference to delete" maxlength="5">
+                        <label for="first-name-filter">First Name</label>
+                        <input type="text" id="first-name-filter" name="first_name" value="<?php echo h($first_name); ?>">
                     </div>
-                    <button type="submit" name="action" value="delete_by_job" onclick="return confirm('Are you sure? This will delete ALL applications for this job reference.');" style="padding: 0.7rem 1rem; background: #dc2626; color: white; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: bold;">Delete All for Job</button>
+                    <div class="field-group">
+                        <label for="last-name-filter">Last Name</label>
+                        <input type="text" id="last-name-filter" name="last_name" value="<?php echo h($last_name); ?>">
+                    </div>
                 </div>
+                <div class="button-row">
+                    <input type="submit" value="Search by Name">
+                </div>
+            </form>
 
-            </div>
-        </form>
+            <form class="apply-form action-panel danger-panel" action="manage.php" method="post" novalidate>
+                <input type="hidden" name="csrf_token" value="<?php echo h(csrf_token()); ?>">
+                <input type="hidden" name="manager_action" value="delete_by_job">
+                <h3>4. Delete All EOIs by Job Reference</h3>
+                <p class="field-note">This removes every EOI submitted for the selected job reference.</p>
+                <div class="field-group">
+                    <label for="delete-job-reference">Job Reference</label>
+                    <input type="text" id="delete-job-reference" name="delete_job_reference" placeholder="Example: FWD25">
+                </div>
+                <div class="button-row">
+                    <input class="danger-submit" type="submit" value="Delete All for Job">
+                </div>
+            </form>
+        </div>
     </section>
 
-    <!-- Results Section -->
-    <?php if ($query_executed): ?>
-        <section class="content-card">
-            <header class="card-header">
-                <div>
-                    <p class="card-tag">Results</p>
-                    <h2><?php echo htmlspecialchars($filter_type); ?></h2>
-                    <?php if (!empty($filter_value)): ?>
-                        <p class="card-summary">
-                            <?php echo htmlspecialchars($filter_value); ?>
-                        </p>
-                    <?php endif; ?>
-                </div>
-            </header>
+    <section class="content-card">
+        <header class="card-header">
+            <div>
+                <p class="card-tag">Results</p>
+                <h2><?php echo h($result_title); ?></h2>
+                <p class="card-summary"><?php echo h($result_summary); ?></p>
+            </div>
+        </header>
 
-            <?php if (count($results) > 0): ?>
-                <div class="table-wrap">
-                    <table class="manage-table" style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
-                        <thead>
-                            <tr style="background: #123d7a; color: white;">
-                                <th style="padding: 0.9rem; text-align: left; border: 1px solid #d7e5f2;">EOI Number</th>
-                                <th style="padding: 0.9rem; text-align: left; border: 1px solid #d7e5f2;">Name</th>
-                                <th style="padding: 0.9rem; text-align: left; border: 1px solid #d7e5f2;">Job Ref</th>
-                                <th style="padding: 0.9rem; text-align: left; border: 1px solid #d7e5f2;">Email</th>
-                                <th style="padding: 0.9rem; text-align: left; border: 1px solid #d7e5f2;">Status</th>
-                                <th style="padding: 0.9rem; text-align: left; border: 1px solid #d7e5f2;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($results as $index => $eoi): ?>
-                                <tr style="<?php echo ($index % 2 === 0) ? 'background: #f8fbff;' : 'background: white;'; ?>">
-                                    <td style="padding: 0.9rem; border: 1px solid #d7e5f2;"><?php echo htmlspecialchars($eoi['eoi_number']); ?></td>
-                                    <td style="padding: 0.9rem; border: 1px solid #d7e5f2;"><?php echo htmlspecialchars($eoi['first_name'] . ' ' . $eoi['last_name']); ?></td>
-                                    <td style="padding: 0.9rem; border: 1px solid #d7e5f2;"><?php echo htmlspecialchars($eoi['job_reference']); ?></td>
-                                    <td style="padding: 0.9rem; border: 1px solid #d7e5f2;"><?php echo htmlspecialchars($eoi['email']); ?></td>
-                                    <td style="padding: 0.9rem; border: 1px solid #d7e5f2;">
-                                        <form method="post" action="manage.php" style="display: inline;">
-                                            <input type="hidden" name="action" value="change_status">
-                                            <input type="hidden" name="eoi_id" value="<?php echo $eoi['eoi_id']; ?>">
-                                            <select name="new_status" onchange="this.form.submit();" style="padding: 0.4rem;">
-                                                <option value="New" <?php echo ($eoi['status'] === 'New') ? 'selected' : ''; ?>>New</option>
-                                                <option value="Current" <?php echo ($eoi['status'] === 'Current') ? 'selected' : ''; ?>>Current</option>
-                                                <option value="Final" <?php echo ($eoi['status'] === 'Final') ? 'selected' : ''; ?>>Final</option>
-                                            </select>
-                                        </form>
-                                    </td>
-                                    <td style="padding: 0.9rem; border: 1px solid #d7e5f2;">
-                                        <a href="#" style="color: #0f4c97; text-decoration: none;">View Details</a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <p style="margin-top: 1rem; color: #52667a;">
-                    <strong>Total Results: <?php echo count($results); ?></strong>
-                </p>
-            <?php else: ?>
-                <p style="color: #52667a; padding: 1rem;">No records found matching your criteria.</p>
-            <?php endif; ?>
-        </section>
-    <?php endif; ?>
-
+        <?php if (count($records) === 0): ?>
+            <p>No EOI records matched this query.</p>
+        <?php else: ?>
+            <div class="table-wrap">
+                <table class="manage-table">
+                    <thead>
+                    <tr>
+                        <th scope="col">EOI Number</th>
+                        <th scope="col">Job Ref</th>
+                        <th scope="col">Applicant</th>
+                        <th scope="col">Contact</th>
+                        <th scope="col">Location</th>
+                        <th scope="col">Skills</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Submitted</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($records as $record): ?>
+                        <tr>
+                            <td><?php echo h($record["EOInumber"]); ?></td>
+                            <td><?php echo h($record["job_reference"]); ?></td>
+                            <td><?php echo h($record["first_name"] . " " . $record["last_name"]); ?></td>
+                            <td>
+                                <span><?php echo h($record["email"]); ?></span><br>
+                                <span><?php echo h($record["phone_number"]); ?></span>
+                            </td>
+                            <td><?php echo h($record["state"] . " " . $record["postcode"]); ?></td>
+                            <td>
+                                <?php echo h($record["skills"]); ?>
+                                <?php if (trim((string)$record["other_skills"]) !== ""): ?>
+                                    <br><span class="field-note"><?php echo h($record["other_skills"]); ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <form class="inline-status-form" action="manage.php" method="post" novalidate>
+                                    <input type="hidden" name="csrf_token" value="<?php echo h(csrf_token()); ?>">
+                                    <input type="hidden" name="manager_action" value="update_status">
+                                    <input type="hidden" name="EOInumber" value="<?php echo h($record["EOInumber"]); ?>">
+                                    <label class="visually-hidden" for="status-<?php echo h($record["EOInumber"]); ?>">Status for EOI <?php echo h($record["EOInumber"]); ?></label>
+                                    <select id="status-<?php echo h($record["EOInumber"]); ?>" name="status">
+                                        <?php foreach (status_options() as $status): ?>
+                                            <option value="<?php echo h($status); ?>"<?php echo $record["status"] === $status ? " selected" : ""; ?>><?php echo h($status); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="submit">Update</button>
+                                </form>
+                            </td>
+                            <td><?php echo h($record["created_at"]); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <p class="results-count"><strong>Total Results: <?php echo count($records); ?></strong></p>
+        <?php endif; ?>
+    </section>
 </main>
 
 <?php include 'footer.inc'; ?>

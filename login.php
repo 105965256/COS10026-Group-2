@@ -1,22 +1,36 @@
 <?php
+require_once __DIR__ . "/settings.php";
+start_project_session();
 
-session_start();
+$conn = db_connect();
+ensure_user_table($conn);
 
-$login_error = '';
+if (!empty($_SESSION["manager_logged_in"])) {
+    header("Location: manage.php");
+    exit;
+}
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = isset($_POST['username']) ? trim($_POST['username']) : '';
-    $password = isset($_POST['password']) ? $_POST['password'] : '';
-    
-    // Simple hardcoded check for now (replace with database later)
-    if ($username === 'admin' && $password === 'admin') {
-        $_SESSION['user_id'] = 1;
-        $_SESSION['username'] = $username;
-        header('Location: manage.php');
-        exit();
+$login_error = "";
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!csrf_valid($_POST["csrf_token"] ?? "")) {
+        $login_error = "Session token expired. Please try again.";
     } else {
-        $login_error = 'Invalid username or password.';
+        $username = clean_input($_POST["username"] ?? "");
+        $password = (string)($_POST["password"] ?? "");
+
+        $result = prepared_result($conn, "SELECT id, username, password_hash FROM `user` WHERE username = ?", "s", array($username));
+        $manager = mysqli_fetch_assoc($result);
+
+        if ($manager && password_verify($password, $manager["password_hash"])) {
+            session_regenerate_id(true);
+            $_SESSION["manager_logged_in"] = true;
+            $_SESSION["manager_username"] = $manager["username"];
+            header("Location: manage.php");
+            exit;
+        }
+
+        $login_error = "Invalid username or password.";
     }
 }
 
@@ -34,7 +48,7 @@ include 'nav.inc';
         <h2>Manager Login</h2>
     </section>
 
-    <section class="content-card" style="max-width: 500px; margin: 0 auto;">
+    <section class="content-card login-card">
         <header class="card-header">
             <div>
                 <p class="card-tag">Sign In</p>
@@ -42,34 +56,33 @@ include 'nav.inc';
             </div>
         </header>
 
-        <?php if (!empty($login_error)): ?>
-            <div style="padding: 1rem; margin-bottom: 1.5rem; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 0.8rem; color: #991b1b;">
-                <strong>Error:</strong> <?php echo htmlspecialchars($login_error); ?>
+        <?php if ($login_error !== ""): ?>
+            <div class="message-box error-box">
+                <strong>Error:</strong> <?php echo h($login_error); ?>
             </div>
         <?php endif; ?>
 
-        <form method="post" action="login.php">
-            <div class="form-grid" style="grid-template-columns: 1fr;">
+        <form class="apply-form" method="post" action="login.php" novalidate>
+            <input type="hidden" name="csrf_token" value="<?php echo h(csrf_token()); ?>">
+            <div class="form-grid single-column-form">
                 <div class="field-group">
                     <label for="username">Username</label>
-                    <input type="text" id="username" name="username" required autofocus>
+                    <input type="text" id="username" name="username" autofocus>
                 </div>
 
                 <div class="field-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
+                    <input type="password" id="password" name="password">
                 </div>
 
-                <div style="text-align: center;">
+                <div class="button-row">
                     <input type="submit" value="Login">
                 </div>
             </div>
         </form>
 
-        <p style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #d9e4ef; text-align: center; color: #52667a; font-size: 0.9rem;">
-            <strong>Demo Credentials:</strong><br>
-            Username: <code>admin</code><br>
-            Password: <code>admin</code>
+        <p class="field-note login-note">
+            Demo credentials: username <code>admin</code> and password <code>admin</code>.
         </p>
     </section>
 </main>

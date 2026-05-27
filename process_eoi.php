@@ -84,20 +84,6 @@ if (!in_array($data["state"], $validStates, true)) {
 
 if (!preg_match("/^[0-9]{4}$/", $data["postcode"])) {
     $errors[] = "Postcode must contain exactly four digits.";
-} else {
-    $statePrefixes = array(
-        "VIC" => array("3", "8"),
-        "NSW" => array("1", "2"),
-        "QLD" => array("4", "9"),
-        "NT" => array("0"),
-        "WA" => array("6"),
-        "SA" => array("5"),
-        "TAS" => array("7"),
-        "ACT" => array("0")
-    );
-    if (isset($statePrefixes[$data["state"]]) && !in_array(substr($data["postcode"], 0, 1), $statePrefixes[$data["state"]], true)) {
-        $errors[] = "Postcode does not match the selected state or territory.";
-    }
 }
 
 if (!filter_var($data["email"], FILTER_VALIDATE_EMAIL) || strlen($data["email"]) > 100) {

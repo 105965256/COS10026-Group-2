@@ -404,11 +404,19 @@ function status_options() {
     return array("New", "Current", "Final");
 }
 
-function csrf_token() {
+function start_project_session() {
     if (session_status() !== PHP_SESSION_ACTIVE) {
+        $session_path = __DIR__ . DIRECTORY_SEPARATOR . "sessions";
+        if (!is_dir($session_path)) {
+            mkdir($session_path, 0777, true);
+        }
+        session_save_path($session_path);
         session_start();
     }
+}
 
+function csrf_token() {
+    start_project_session();
     if (empty($_SESSION["csrf_token"])) {
         $_SESSION["csrf_token"] = bin2hex(random_bytes(32));
     }
@@ -417,10 +425,7 @@ function csrf_token() {
 }
 
 function csrf_valid($token) {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
+    start_project_session();
     return isset($_SESSION["csrf_token"]) && hash_equals($_SESSION["csrf_token"], (string)$token);
 }
 ?>

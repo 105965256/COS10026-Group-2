@@ -142,21 +142,26 @@ a:hover {
 .site-nav a {
     display: inline-block;
     padding: 0.7rem 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--color-header-text);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--color-primary-dark);
     text-decoration: none;
+    font-weight: bold;
 }
 
 .site-nav a.current-page,
 .site-nav a[aria-current="page"] {
-    background-color: var(--color-surface);
-    color: #0f3d75;
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: #ffffff;
 }
 
-.site-nav a:hover{
-    background: rgba(255, 255, 255, 0.2);
+.site-nav a:hover,
+.site-nav a:focus {
+    border-color: var(--color-primary-accent);
+    background: var(--color-surface-highlight);
+    color: var(--color-primary-dark);
 }
 
 /* Shared card containers */
@@ -495,6 +500,7 @@ a:hover {
 .apply-form input[type="text"],
 .apply-form input[type="email"],
 .apply-form input[type="tel"],
+.apply-form input[type="password"],
 .apply-form select,
 .apply-form textarea {
     width: 100%;
@@ -509,6 +515,7 @@ a:hover {
 .apply-form input[type="text"]:focus,
 .apply-form input[type="email"]:focus,
 .apply-form input[type="tel"]:focus,
+.apply-form input[type="password"]:focus,
 .apply-form select:focus,
 .apply-form textarea:focus {
     border-color: var(--color-primary-accent);
@@ -594,6 +601,139 @@ a:hover {
 .application-steps li {
     margin-bottom: 0.55rem;
     color: var(--color-text-muted);
+}
+
+.login-card {
+    max-width: 520px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.single-column-form {
+    grid-template-columns: 1fr;
+}
+
+.login-note {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+}
+
+.logout-link {
+    float: right;
+    font-weight: bold;
+}
+
+.message-box {
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.2rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+}
+
+.error-box {
+    border-color: #fca5a5;
+    color: #7f1d1d;
+    background: #fee2e2;
+}
+
+.success-box {
+    border-color: #86efac;
+    color: #14532d;
+    background: #dcfce7;
+}
+
+.manager-actions {
+    display: grid;
+    gap: 1rem;
+}
+
+.action-panel {
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-soft);
+}
+
+.action-panel h3 {
+    margin-top: 0;
+    color: var(--color-heading-strong);
+}
+
+.danger-panel {
+    border-color: #fca5a5;
+    background: #fff1f2;
+}
+
+.danger-submit {
+    border-color: #b91c1c !important;
+    background: #dc2626 !important;
+}
+
+.manage-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #bdd0e5;
+    background: #ffffff;
+    font-size: 0.94rem;
+}
+
+.manage-table th,
+.manage-table td {
+    padding: 0.8rem 0.9rem;
+    border: 1px solid #d5e1ee;
+    text-align: left;
+    vertical-align: top;
+}
+
+.manage-table thead th {
+    color: #ffffff;
+    background: #123d7a;
+}
+
+.manage-table tbody tr:nth-child(even) td {
+    background: #f8fbff;
+}
+
+.inline-status-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+}
+
+.inline-status-form select,
+.inline-status-form button {
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #bfd0e0;
+    border-radius: 0.65rem;
+    font: inherit;
+}
+
+.inline-status-form button {
+    color: #ffffff;
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    cursor: pointer;
+}
+
+.results-count {
+    margin-top: 1rem;
+    color: var(--color-text-muted);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* About page sections */
