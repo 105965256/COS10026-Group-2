@@ -1,52 +1,25 @@
 <?php
+require_once __DIR__ . "/settings.php";
+
+$conn = db_connect();
+ensure_about_table($conn);
+
+$result = mysqli_query($conn, "SELECT * FROM about ORDER BY display_order, member_name");
+if (!$result) {
+    db_fail(mysqli_error($conn));
+}
+
+$members = array();
+while ($row = mysqli_fetch_assoc($result)) {
+    $members[] = $row;
+}
+
 $page_title = "About | CodeCrafters";
 $page_heading = "Meet the team behind the project";
 $page_description = "This page introduces our group members, project contributions, shared class details, and the teamwork behind our G05 recruitment website.";
 
 include 'header.inc';
 include 'nav.inc';
-
-$members = [
-    [
-        'member_id' => 1,
-        'member_name' => 'Zikun Pang',
-        'student_id' => '105965214',
-        'project_1_contribution' => 'Responsible for the apply.html and part of the about.html pages, including the home page company presentation, search feature, merged-cell recruitment table, and form styling.',
-        'project_2_contribution' => 'Database design for EOI table, form processing and validation, application confirmation system.',
-        'quote_original' => '细节决定成败，坚持让每一步都更扎实。',
-        'quote_english' => 'Details determine success, so every step should be built on a solid foundation.',
-        'dream_job' => 'Software engineer building practical digital products',
-        'coding_snack' => 'Iced black tea',
-        'hometown' => 'Jining, Shandong',
-        'display_order' => 1
-    ],
-    [
-        'member_id' => 2,
-        'member_name' => 'Yunchen Xue',
-        'student_id' => '105965256',
-        'project_1_contribution' => 'Responsible for the jobs.html page, including the job description structure, role summaries, responsibility lists, requirement sections, and supporting sidebar content.',
-        'project_2_contribution' => 'Jobs database implementation, dynamic job listing rendering, search functionality.',
-        'quote_original' => '积跬步千里，才能看见更远的风景。',
-        'quote_english' => 'Only by taking steady steps can we reach farther horizons.',
-        'dream_job' => 'Product designer for an international tech platform',
-        'coding_snack' => 'Sugar-free soda',
-        'hometown' => 'Qingdao, Shandong',
-        'display_order' => 2
-    ],
-    [
-        'member_id' => 3,
-        'member_name' => 'Ricky Jiang',
-        'student_id' => '106108939',
-        'project_1_contribution' => 'Responsible for the index.html and part of the about.html page refinement and shared visual presentation, including group profile content organisation and team coordination.',
-        'project_2_contribution' => 'Manager dashboard development, authentication system, EOI management interface, PHP modularization.',
-        'quote_original' => '把简单的事情做好，就是最稳的进步。',
-        'quote_english' => 'Doing simple things well is the most reliable way to keep improving.',
-        'dream_job' => 'Full-stack engineer working on user-focused web products',
-        'coding_snack' => 'Shapes',
-        'hometown' => 'Shanghai',
-        'display_order' => 3
-    ]
-];
 ?>
 
 <main id="main-content" class="container page-main" role="main">
@@ -84,16 +57,16 @@ $members = [
                     <li>
                         <strong>Group members:</strong>
                         <ul>
-                            <li>Zikun Pang</li>
-                            <li>Yunchen Xue</li>
-                            <li>Ricky Jiang</li>
+                            <?php foreach ($members as $member): ?>
+                                <li><?php echo h($member["member_name"]); ?></li>
+                            <?php endforeach; ?>
                         </ul>
                     </li>
                 </ul>
             </div>
 
             <figure class="about-photo">
-                <img src="group-photo.jpg" alt="Group photo of the three CodeCrafters team members." class="group-photo">
+                <img src="9a2e405ba7c57796ac91e9fdd0197e90.jpg" alt="Group photo of the three CodeCrafters team members." class="group-photo">
                 <figcaption>
                     The CodeCrafters team group photo.
                 </figcaption>
@@ -107,7 +80,7 @@ $members = [
                 <p class="card-tag">Contributions</p>
                 <h2>Member contributions and quotes</h2>
                 <p class="card-summary">
-                    Our contribution summary displays each member's role and completed work in both projects.
+                    Member contribution data is loaded from the database and can be refreshed from the about table.
                 </p>
             </div>
         </header>
@@ -115,19 +88,19 @@ $members = [
         <dl class="member-contributions">
             <?php foreach ($members as $member): ?>
                 <dt>
-                    <?php echo htmlspecialchars($member['member_name']); ?>
-                    <span class="student-id"><abbr title="Student ID"><?php echo htmlspecialchars($member['student_id']); ?></abbr></span>
+                    <?php echo h($member["member_name"]); ?>
+                    <span class="student-id"><abbr title="Student ID"><?php echo h($member["student_id"]); ?></abbr></span>
                 </dt>
                 <dd>
-                    <strong>Project 1:</strong> <?php echo htmlspecialchars($member['project_1_contribution']); ?>
+                    <strong>Project 1:</strong> <?php echo h($member["project_1_contribution"]); ?>
                 </dd>
                 <dd>
-                    <strong>Project 2:</strong> <?php echo htmlspecialchars($member['project_2_contribution']); ?>
+                    <strong>Project 2:</strong> <?php echo h($member["project_2_contribution"]); ?>
                 </dd>
                 <dd>
-                    <span lang="zh-CN"><?php echo htmlspecialchars($member['quote_original']); ?></span>
+                    <span lang="zh-CN"><?php echo h($member["quote_original"]); ?></span>
                     <br>
-                    <em>English translation:</em> <?php echo htmlspecialchars($member['quote_english']); ?>
+                    <em>English translation:</em> <?php echo h($member["quote_english"]); ?>
                 </dd>
             <?php endforeach; ?>
         </dl>
@@ -159,10 +132,10 @@ $members = [
                 <tbody>
                 <?php foreach ($members as $member): ?>
                     <tr>
-                        <th scope="row"><?php echo htmlspecialchars($member['member_name']); ?></th>
-                        <td><?php echo htmlspecialchars($member['dream_job']); ?></td>
-                        <td><?php echo htmlspecialchars($member['coding_snack']); ?></td>
-                        <td><?php echo htmlspecialchars($member['hometown']); ?></td>
+                        <th scope="row"><?php echo h($member["member_name"]); ?></th>
+                        <td><?php echo h($member["dream_job"]); ?></td>
+                        <td><?php echo h($member["coding_snack"]); ?></td>
+                        <td><?php echo h($member["hometown"]); ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

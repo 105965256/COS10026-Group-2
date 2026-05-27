@@ -27,7 +27,7 @@
                         ShopSphere is an online retail platform growing its digital team to improve customer-facing websites, product listings, and seamless application workflows for modern retail.
                     </p>
 
-                    <form class="home-search" action="jobs.php" method="get" aria-label="Search for jobs">
+                    <form class="home-search" action="search.php" method="get" aria-label="Search for jobs" novalidate>
                         <label class="search-label" for="job-search">Search available roles</label>
                         <div class="search-row">
                             <input type="search" id="job-search" name="search" placeholder="Search by role, skill, or job reference">

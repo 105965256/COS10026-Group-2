@@ -285,10 +285,101 @@ function ensure_user_table($conn) {
     }
 }
 
+function ensure_about_table($conn) {
+    if (table_needs_create($conn, "about")) {
+    $sql = "
+        CREATE TABLE IF NOT EXISTS about (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            member_name VARCHAR(80) NOT NULL,
+            student_id VARCHAR(20) NOT NULL,
+            project_1_contribution TEXT NOT NULL,
+            project_2_contribution TEXT NOT NULL,
+            quote_original TEXT NOT NULL,
+            quote_english TEXT NOT NULL,
+            dream_job VARCHAR(160) NOT NULL,
+            coding_snack VARCHAR(80) NOT NULL,
+            hometown VARCHAR(80) NOT NULL,
+            display_order INT UNSIGNED NOT NULL DEFAULT 1,
+            PRIMARY KEY (id),
+            UNIQUE KEY unique_student_id (student_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ";
+    db_execute($conn, $sql);
+    }
+
+    $members = array(
+        array(
+            "Zikun Pang",
+            "105965214",
+            "Responsible for the apply.html and part of the about.html pages, including the home page company presentation, search feature, merged-cell recruitment table, and form styling.",
+            "Database design for the EOI table, server-side application processing, validation, and confirmation workflow.",
+            "细节决定成败，坚持让每一步都更扎实。",
+            "Details determine success, so every step should be built on a solid foundation.",
+            "Software engineer building practical digital products",
+            "Iced black tea",
+            "Jining, Shandong",
+            1
+        ),
+        array(
+            "Yunchen Xue",
+            "105965256",
+            "Responsible for the jobs.html page, including job description structure, role summaries, responsibility lists, requirement sections, and supporting sidebar content.",
+            "Jobs database implementation, dynamic job listing rendering, and database-backed search functionality.",
+            "积跬步千里，才能看见更远的风景。",
+            "Only by taking steady steps can we reach farther horizons.",
+            "Product designer for an international tech platform",
+            "Sugar-free soda",
+            "Qingdao, Shandong",
+            2
+        ),
+        array(
+            "Ricky Jiang",
+            "106108939",
+            "Responsible for the index.html and part of the about.html page refinement and shared visual presentation, including group profile content organisation and team coordination.",
+            "Manager dashboard development, authentication, EOI management interface, and PHP modularisation.",
+            "把简单的事情做好，就是最稳的进步。",
+            "Doing simple things well is the most reliable way to keep improving.",
+            "Full-stack engineer working on user-focused web products",
+            "Shapes",
+            "Shanghai",
+            3
+        )
+    );
+
+    $sql = "
+        INSERT INTO about (
+            member_name, student_id, project_1_contribution, project_2_contribution,
+            quote_original, quote_english, dream_job, coding_snack, hometown, display_order
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            member_name = VALUES(member_name),
+            project_1_contribution = VALUES(project_1_contribution),
+            project_2_contribution = VALUES(project_2_contribution),
+            quote_original = VALUES(quote_original),
+            quote_english = VALUES(quote_english),
+            dream_job = VALUES(dream_job),
+            coding_snack = VALUES(coding_snack),
+            hometown = VALUES(hometown),
+            display_order = VALUES(display_order)
+    ";
+
+    foreach ($members as $member) {
+        $stmt = mysqli_prepare($conn, $sql);
+        if (!$stmt) {
+            db_fail(mysqli_error($conn));
+        }
+        bind_params($stmt, "sssssssssi", $member);
+        if (!mysqli_stmt_execute($stmt)) {
+            db_fail(mysqli_stmt_error($stmt));
+        }
+    }
+}
+
 function ensure_all_tables($conn) {
     ensure_jobs_table($conn);
     ensure_eoi_table($conn);
     ensure_user_table($conn);
+    ensure_about_table($conn);
 }
 
 function skill_labels() {
