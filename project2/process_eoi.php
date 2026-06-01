@@ -1,4 +1,5 @@
 <?php
+// AI declaration: AI assistance was used to help debug this file.
 require_once __DIR__ . "/settings.php";
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST" || !isset($_POST["job-reference"])) {

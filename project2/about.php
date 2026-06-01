@@ -66,7 +66,7 @@ include 'nav.inc';
             </div>
 
             <figure class="about-photo">
-                <img src="9a2e405ba7c57796ac91e9fdd0197e90.jpg" alt="Group photo of the three CodeCrafters team members." class="group-photo">
+                <img src="images/9a2e405ba7c57796ac91e9fdd0197e90.jpg" alt="Group photo of the three CodeCrafters team members." class="group-photo">
                 <figcaption>
                     The CodeCrafters team group photo.
                 </figcaption>
