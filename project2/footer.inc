@@ -9,8 +9,7 @@
         </div>
         <div class="footer-links">
             <p><a href="https://2568879251l.atlassian.net/jira/software/projects/SCRUM/boards/1">Jira Project Link</a></p>
-            <p><a href="https://github.com/105965256/COS10026-Group-Work">GitHub Repository Link</a></p>
-            <p><a href="https://105965256.github.io/COS10026-Group-Work/">GitHub Pages</a></p>
+            <p><a href="https://github.com/105965256/COS10026-Group-2">GitHub Repository Link</a></p>
         </div>
     </div>
 </footer>
